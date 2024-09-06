@@ -37,6 +37,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   TextEditingController keywordController = TextEditingController();
+  String? imageUrl;
 
   @override
   void dispose() {
@@ -64,13 +65,6 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                var urlMercari = Uri.https(
-                  'www.mercari.com', // 호스트 이름
-                  '/search/', // 경로
-                  {'keyword': keywordController.text},
-                ); // 쿼리 파라미터
-                retrieveSellList(urlMercari);
-
                 var urlYahooAuction = Uri.https(
                   'auctions.yahoo.co.jp', // 호스트 이름
                   '/search/search', // 경로
@@ -87,7 +81,18 @@ class _MyHomePageState extends State<MyHomePage> {
                     'y': '0',
                   }, // 쿼리 파라미터 맵
                 );
-                retrieveSellList(urlYahooAuction);
+                imageUrl = await retrieveSellList(urlYahooAuction);
+                print(imageUrl);
+                if (imageUrl != null) {
+                  setState(() {});
+                }
+                // var urlMercari = Uri.https(
+                //   'www.mercari.com', // 호스트 이름
+                //   '/search/', // 경로
+                //   {'keyword': "seiko"},
+                //   //{'keyword': keywordController.text},
+                // ); // 쿼리 파라미터
+                // await retrieveSellList(urlMercari);
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -99,34 +104,53 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
             ),
-            Text(
-              "Search List (To be updated)",
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            ImageUpdate(imageUrl),
           ],
         ),
       ),
     );
   }
 
-  void retrieveSellList(Uri url) async {
+  Future<String?> retrieveSellList(Uri url) async {
+    String? imageUrl;
+    print(url);
     // Await the http get response, then decode the json-formatted response.
     var response = await http.get(url);
     if (response.statusCode == 200) {
       dom.Document document = parser.parse(response.body);
+      List<dom.Element> temp = document
+          .getElementsByClassName("Product__CDNImageWrapper-sc-8ff3bf4d-1");
+      List<dom.Element> temp2 =
+          document.getElementsByClassName("T3-sc-7hzl3c-a");
+      List<dom.Element> temp3 =
+          document.getElementsByClassName("Link__StyledAnchor-sc-c7cc0c35-0");
+      List<dom.Element> temp4 = document
+          .getElementsByClassName("Link__StyledPlainLink-sc-c7cc0c35-3");
+      List<dom.Element> temp5 = document.getElementsByClassName("hRpGAg");
+      List<dom.Element> temp6 = document.getElementsByClassName("djQHPU");
+      List<dom.Element> YahooAuction =
+          document.getElementsByClassName("Product");
+      dom.Element? firstElem = YahooAuction[0].querySelector('img');
+      imageUrl = firstElem?.attributes['src'];
 
-      List<dom.Element> temp = document.getElementsByClassName("BodyContainer-sc-15b083c9-0 SearchBodyContainer-sc-d3f42f57-0 kwsxFw NonJg");
-      // div id="m83641857846" 요소를 찾음
-      dom.Element? divElement = document?.getElementById('m37515470387');
+      dom.Element? divElement = document?.getElementById('m68230965782');
       dom.Element? divElement2 = document.body?.querySelector('m37515470387');
 
-      if (divElement != null) {
-        print('Found div: ${divElement.outerHtml}');
-      } else {
-        print('Div with id "m83641857846" not found.');
-      }
+      return imageUrl;
     } else {
       print('Failed to load the webpage.');
+    }
+  }
+
+  Widget ImageUpdate(String? imageUrl) {
+    print(imageUrl);
+    if (imageUrl == null) {
+      return Text(
+        "Search List (To be updated)",
+        style: Theme.of(context).textTheme.headlineMedium,
+      );
+    } else {
+      return Image.network(imageUrl!);
     }
   }
 }
